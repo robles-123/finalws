@@ -3,6 +3,7 @@ import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import "../App.css";
 import Evaluation from "./Evalution.jsx";
+import { fetchSeminars as dbFetchSeminars, saveJoinedParticipant } from "../lib/db";
 
 function ParticipantDashboard({ onLogout }) {
   const [activeSection, setActiveSection] = useState("seminars");
@@ -10,16 +11,36 @@ function ParticipantDashboard({ onLogout }) {
   const [availableSeminars, setAvailableSeminars] = useState([]);
   const [completedEvaluations, setCompletedEvaluations] = useState([]);
 
-  // 🧾 Load seminars and joined status
+  // 🧾 Load seminars and joined status (prefer Supabase, fallback to localStorage)
   useEffect(() => {
-    const storedSeminars = JSON.parse(localStorage.getItem("seminars")) || [];
-    setAvailableSeminars(storedSeminars);
+    let mounted = true;
 
-    const storedJoined = JSON.parse(localStorage.getItem("joinedSeminars")) || [];
-    setJoinedSeminars(storedJoined);
+    async function load() {
+      try {
+        const { data, error } = await dbFetchSeminars();
+        if (!error && data) {
+          if (mounted) {
+            setAvailableSeminars(data);
+            localStorage.setItem('seminars', JSON.stringify(data));
+          }
+        } else {
+          const storedSeminars = JSON.parse(localStorage.getItem("seminars")) || [];
+          if (mounted) setAvailableSeminars(storedSeminars);
+        }
+      } catch (err) {
+        const storedSeminars = JSON.parse(localStorage.getItem("seminars")) || [];
+        if (mounted) setAvailableSeminars(storedSeminars);
+      }
 
-    const storedCompletedEvals = JSON.parse(localStorage.getItem("completedEvaluations")) || [];
-    setCompletedEvaluations(storedCompletedEvals);
+      const storedJoined = JSON.parse(localStorage.getItem("joinedSeminars")) || [];
+      const storedCompletedEvals = JSON.parse(localStorage.getItem("completedEvaluations")) || [];
+      if (mounted) {
+        setJoinedSeminars(storedJoined);
+        setCompletedEvaluations(storedCompletedEvals);
+      }
+    }
+
+    load();
 
     const handleStorageChange = () => {
       setAvailableSeminars(JSON.parse(localStorage.getItem("seminars")) || []);
@@ -27,7 +48,10 @@ function ParticipantDashboard({ onLogout }) {
       setCompletedEvaluations(JSON.parse(localStorage.getItem("completedEvaluations")) || []);
     };
     window.addEventListener("storage", handleStorageChange);
-    return () => window.removeEventListener("storage", handleStorageChange);
+    return () => {
+      mounted = false;
+      window.removeEventListener("storage", handleStorageChange);
+    };
   }, []);
 
   // 🧾 Check if certificate is eligible (both attendance marked AND evaluation completed)
@@ -52,11 +76,35 @@ function ParticipantDashboard({ onLogout }) {
     return { status: "ready", message: "Ready to Download", icon: "✅" };
   };
 
-  const handleJoinSeminar = (seminar) => {
+  const handleJoinSeminar = async (seminar) => {
     if (joinedSeminars.find((s) => s.title === seminar.title)) return;
-    const updated = [...joinedSeminars, { ...seminar, completed: false }];
+
+    // Prepare participant identity (try stored participant info else fallback)
+    const participant_email = localStorage.getItem('participantEmail') || 'participant@example.com';
+    const participant_name = localStorage.getItem('participantName') || null;
+
+    const entry = { ...seminar, completed: false };
+
+    // Optimistic UI update
+    const updated = [...joinedSeminars, entry];
     setJoinedSeminars(updated);
     localStorage.setItem("joinedSeminars", JSON.stringify(updated));
+
+    // Try to persist to Supabase (log response so we can debug)
+    try {
+      const seminarId = seminar.id || null;
+      const res = await saveJoinedParticipant(seminarId, { participant_email, participant_name });
+      if (res.error) {
+        console.warn('Failed to save joined participant to Supabase:', res.error);
+        alert('Join saved locally but failed to persist to Supabase. Check console for details.');
+      } else {
+        console.log('Joined participant saved to Supabase:', res.data);
+        alert('Joined and saved to Supabase.');
+      }
+    } catch (err) {
+      console.warn('Unexpected error saving joined participant:', err);
+      alert('Join saved locally but unexpected error when saving to Supabase. Check console.');
+    }
   };
 
   const handleMarkAttendance = (title) => {

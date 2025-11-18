@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "../App.css";
+import { saveEvaluation } from "../lib/db";
 
 function Evaluation() {
   const [seminars, setSeminars] = useState([]);
@@ -66,21 +67,33 @@ function Evaluation() {
     setAnswers({ ...answers, [qId]: value });
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     alert("Evaluation submitted successfully!");
     const allEvaluations = JSON.parse(localStorage.getItem("evaluations") || "{}");
     const completedEvaluations = JSON.parse(localStorage.getItem("completedEvaluations") || "[]");
     
-    // Save evaluation answers
+    // Save evaluation answers locally
     allEvaluations[selectedSeminar.title] = answers;
     localStorage.setItem("evaluations", JSON.stringify(allEvaluations));
     
-    // Track that evaluation is completed for this seminar
+    // Track that evaluation is completed for this seminar locally
     if (!completedEvaluations.includes(selectedSeminar.title)) {
       completedEvaluations.push(selectedSeminar.title);
     }
     localStorage.setItem("completedEvaluations", JSON.stringify(completedEvaluations));
-    
+
+    // Try to persist evaluation to Supabase
+    try {
+      const participant_email = localStorage.getItem('participantEmail') || 'participant@example.com';
+      const seminarId = selectedSeminar.id || null;
+      const { data, error } = await saveEvaluation(seminarId, participant_email, answers);
+      if (error) {
+        console.warn('Failed to save evaluation to Supabase:', error.message || error);
+      }
+    } catch (err) {
+      console.warn('Unexpected error saving evaluation:', err);
+    }
+
     setSelectedSeminar(null);
     setAnswers({});
   };

@@ -4,23 +4,48 @@ import Login from "./components/Login";
 import Admin from "./components/Admin";
 import Participant from "./components/Participant";
 import CreateSeminar from "./components/CreateSeminar";
+import { supabase } from "./lib/supabaseClient";
 
 function App() {
   const navigate = useNavigate();
 
-  const handleLogin = (username, password) => {
-    if (username === "admin" && password === "admin123") {
-      localStorage.setItem("userRole", "admin");
-      navigate("/admin");
-    } else if (username === "participant" && password === "part123") {
-      localStorage.setItem("userRole", "participant");
-      navigate("/participant");
-    } else {
-      alert("Invalid username or password!");
+  const handleLogin = async (username, password) => {
+    // Map simple usernames (e.g., "admin") to an email that exists in Supabase.
+    // If the user typed a proper email (contains @), use it as-is.
+    const email = username.includes("@") ? username : `${username}@example.com`;
+
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        alert(error.message || "Authentication failed");
+        return;
+      }
+
+      const userEmail = data?.user?.email || email;
+
+      if (userEmail === "admin@example.com") {
+        localStorage.setItem("userRole", "admin");
+        navigate("/admin");
+      } else {
+        localStorage.setItem("userRole", "participant");
+        navigate("/participant");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Login error");
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+    } catch (err) {
+      console.warn('Sign out error', err);
+    }
     localStorage.removeItem("userRole");
     navigate("/");
   };

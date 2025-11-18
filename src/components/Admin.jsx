@@ -2,6 +2,7 @@
   import Calendar from "react-calendar";
   import "react-calendar/dist/Calendar.css";
   import "../App.css";
+  import { fetchSeminars, createSeminar as dbCreateSeminar, deleteSeminar as dbDeleteSeminar } from "../lib/db";
 
   function Admin({ onLogout }) {
     const [activeTab, setActiveTab] = useState("dashboard");
@@ -13,19 +14,43 @@
     const [participants, setParticipants] = useState("");
     const [date, setDate] = useState("");
 
-    // Load seminars from localStorage on mount
+    // Load seminars from Supabase on mount, fall back to localStorage if unavailable
     useEffect(() => {
-      const storedSeminars = JSON.parse(localStorage.getItem("seminars")) || [];
-      setSeminars(storedSeminars);
+      let mounted = true;
+
+      async function load() {
+        try {
+          const { data, error } = await fetchSeminars();
+          if (error || !data) {
+            // fallback
+            const storedSeminars = JSON.parse(localStorage.getItem("seminars")) || [];
+            if (mounted) setSeminars(storedSeminars);
+          } else {
+            if (mounted) {
+              setSeminars(data);
+              // keep localStorage in sync for offline use
+              localStorage.setItem("seminars", JSON.stringify(data));
+            }
+          }
+        } catch (err) {
+          const storedSeminars = JSON.parse(localStorage.getItem("seminars")) || [];
+          if (mounted) setSeminars(storedSeminars);
+        }
+      }
+
+      load();
 
       const handleStorageChange = () => {
         setSeminars(JSON.parse(localStorage.getItem("seminars")) || []);
       };
       window.addEventListener("storage", handleStorageChange);
-      return () => window.removeEventListener("storage", handleStorageChange);
+      return () => {
+        mounted = false;
+        window.removeEventListener("storage", handleStorageChange);
+      };
     }, []);
 
-    const handleCreateSeminar = (e) => {
+    const handleCreateSeminar = async (e) => {
       e.preventDefault();
       if (!title || !duration || !speaker || !participants || !date) {
         alert("Please fill out all fields.");
@@ -60,23 +85,54 @@
         ]
       };
 
-      const updated = [...seminars, newSeminar];
-      setSeminars(updated);
-      localStorage.setItem("seminars", JSON.stringify(updated));
-
-      setTitle("");
-      setDuration("");
-      setSpeaker("");
-      setParticipants("");
-      setDate("");
-
-      alert("Seminar created successfully!");
+        // Try to persist to Supabase first
+        try {
+          const { data, error } = await dbCreateSeminar(newSeminar);
+          if (error) {
+            // fallback to local storage
+            const updated = [...seminars, newSeminar];
+            setSeminars(updated);
+            localStorage.setItem("seminars", JSON.stringify(updated));
+            alert("Seminar saved locally (supabase error).");
+          } else {
+            // data is an array with inserted row
+            const created = data && data[0] ? data[0] : newSeminar;
+            const updated = [...seminars, created];
+            setSeminars(updated);
+            localStorage.setItem("seminars", JSON.stringify(updated));
+            setTitle("");
+            setDuration("");
+            setSpeaker("");
+            setParticipants("");
+            setDate("");
+            alert("Seminar created successfully!");
+          }
+        } catch (err) {
+          const updated = [...seminars, newSeminar];
+          setSeminars(updated);
+          localStorage.setItem("seminars", JSON.stringify(updated));
+          alert("Seminar saved locally (unexpected error).");
+        }
     };
 
-    const handleDelete = (index) => {
+    const handleDelete = async (index) => {
+      const sem = seminars[index];
+      // remove locally first to keep UI snappy
       const updated = seminars.filter((_, i) => i !== index);
       setSeminars(updated);
       localStorage.setItem("seminars", JSON.stringify(updated));
+
+      // if seminar has an id, attempt to remove from Supabase
+      if (sem && sem.id) {
+        try {
+          const { data, error } = await dbDeleteSeminar(sem.id);
+          if (error) {
+            console.warn('Error deleting seminar from Supabase:', error);
+          }
+        } catch (err) {
+          console.warn('Unexpected delete error:', err);
+        }
+      }
     };
 
     // Get joined participants from localStorage
