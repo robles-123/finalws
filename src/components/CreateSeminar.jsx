@@ -3,6 +3,16 @@ import { useNavigate } from "react-router-dom";
 import "../App.css";
 import { createSeminar as dbCreateSeminar } from "../lib/db";
 
+const toISODateTime = (dateString, t) => {
+  if (!dateString) return null;
+  let hour = parseInt(t.hour, 10) % 12;
+  if (String(t.period).toUpperCase() === 'PM') hour += 12;
+  const minute = parseInt(t.minute, 10);
+  const [year, month, day] = dateString.split('-').map(Number);
+  const dt = new Date(year, month - 1, day, hour, minute, 0, 0);
+  return dt.toISOString(); // store canonical ISO
+};
+
 function CreateSeminar({ onLogout }) {
   const navigate = useNavigate();
   const [seminar, setSeminar] = useState({
@@ -27,83 +37,100 @@ function CreateSeminar({ onLogout }) {
     setEndTime({ ...endTime, [e.target.name]: e.target.value });
   };
 
+  
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!seminar.title || !seminar.duration || !seminar.speaker || !seminar.participants) {
-      window.dispatchEvent(new CustomEvent('app-banner', { detail: "Please fill out all required fields (title, duration, speaker, participants)." }));
-      return;
-    }
+  e.preventDefault();
 
-    // validate date and time
-    if (!seminar.date) {
-      if (!confirm('No date selected. Continue without a date?')) return;
-    }
+  // 1) Basic required fields check (title, duration, speaker, participants)
+  if (!seminar.title || !seminar.duration || !seminar.speaker || !seminar.participants) {
+    window.dispatchEvent(new CustomEvent('app-banner', { detail: "Please fill out all required fields (title, duration, speaker, participants)." }));
+    return;
+  }
 
-    // ensure time fields are present and valid (start and end)
-    const hourNum = parseInt(time.hour, 10);
-    const endHourNum = parseInt(endTime.hour, 10);
-    const validMinutes = ['00', '15', '30', '45'];
-    if (!time.hour || !time.minute || !time.period || isNaN(hourNum) || hourNum < 1 || hourNum > 12 || !validMinutes.includes(time.minute) || !(time.period === 'AM' || time.period === 'PM')) {
-      window.dispatchEvent(new CustomEvent('app-banner', { detail: 'Please select a valid start time (hour 1-12, minute 00/15/30/45, AM/PM).' }));
-      return;
-    }
-    if (!endTime.hour || !endTime.minute || !endTime.period || isNaN(endHourNum) || endHourNum < 1 || endHourNum > 12 || !validMinutes.includes(endTime.minute) || !(endTime.period === 'AM' || endTime.period === 'PM')) {
-      window.dispatchEvent(new CustomEvent('app-banner', { detail: 'Please select a valid end time (hour 1-12, minute 00/15/30/45, AM/PM).' }));
-      return;
-    }
+  // 2) Validate time fields (already present in your code — keep those checks)
+  const hourNum = parseInt(time.hour, 10);
+  const endHourNum = parseInt(endTime.hour, 10);
+  const validMinutes = ['00', '15', '30', '45'];
 
-    // convert to minutes since midnight for comparison
-    const toMinutes = (t) => {
-      let h = parseInt(t.hour, 10) % 12;
-      if (t.period === 'PM') h += 12;
-      return h * 60 + parseInt(t.minute, 10);
-    };
-    const startMinutes = toMinutes(time);
-    const finishMinutes = toMinutes(endTime);
-    if (finishMinutes <= startMinutes) {
-      window.dispatchEvent(new CustomEvent('app-banner', { detail: 'End time must be after start time.' }));
-      return;
-    }
-    // prepare strings for saving
-    const startString = `${time.hour.padStart(2,'0')}:${time.minute} ${time.period}`;
-    const endString = `${endTime.hour.padStart(2,'0')}:${endTime.minute} ${endTime.period}`;
-    // Try to persist to Supabase first
-    try {
-      const { data, error } = await dbCreateSeminar({
-        title: seminar.title,
-        duration: seminar.duration,
-        speaker: seminar.speaker,
-        participants: seminar.participants,
-        date: seminar.date || null,
-        start_time: startString,
-        end_time: endString,
-      });
+  if (!time.hour || !time.minute || !time.period || isNaN(hourNum) || hourNum < 1 || hourNum > 12 || !validMinutes.includes(time.minute) || !(time.period === 'AM' || time.period === 'PM')) {
+    window.dispatchEvent(new CustomEvent('app-banner', { detail: 'Please select a valid start time (hour 1-12, minute 00/15/30/45, AM/PM).' }));
+    return;
+  }
+  if (!endTime.hour || !endTime.minute || !endTime.period || isNaN(endHourNum) || endHourNum < 1 || endHourNum > 12 || !validMinutes.includes(endTime.minute) || !(endTime.period === 'AM' || endTime.period === 'PM')) {
+    window.dispatchEvent(new CustomEvent('app-banner', { detail: 'Please select a valid end time (hour 1-12, minute 00/15/30/45, AM/PM).' }));
+    return;
+  }
 
-      if (error) {
-        // fallback to localStorage
-        const seminars = JSON.parse(localStorage.getItem("seminars")) || [];
-        seminars.push({ ...seminar, start_time: startString, end_time: endString });
-        localStorage.setItem("seminars", JSON.stringify(seminars));
-        window.dispatchEvent(new CustomEvent('app-banner', { detail: "Seminar saved locally (supabase error)." }));
-      } else {
-        const created = Array.isArray(data) && data[0] ? data[0] : null;
-        const seminars = JSON.parse(localStorage.getItem("seminars")) || [];
-        seminars.push(created || { ...seminar, start_time: startString, end_time: endString });
-        localStorage.setItem("seminars", JSON.stringify(seminars));
-        window.dispatchEvent(new CustomEvent('app-banner', { detail: "✅ Seminar created successfully!" }));
-      }
-    } catch (err) {
-      const seminars = JSON.parse(localStorage.getItem("seminars")) || [];
-      seminars.push({ ...seminar, start_time: startString, end_time: endString });
-      localStorage.setItem("seminars", JSON.stringify(seminars));
-      window.dispatchEvent(new CustomEvent('app-banner', { detail: "Seminar saved locally (unexpected error)." }));
-    }
-
-    setSeminar({ title: "", duration: "", speaker: "", participants: "" });
-    setTime({ hour: "9", minute: "00", period: "AM" });
-    setEndTime({ hour: "11", minute: "00", period: "AM" });
-    navigate("/admin");
+  // 3) Ensure the end time is after start (on the same date)
+  const toMinutes = (t) => {
+    let h = parseInt(t.hour, 10) % 12;
+    if (t.period === 'PM') h += 12;
+    return h * 60 + parseInt(t.minute, 10);
   };
+  const startMinutes = toMinutes(time);
+  const finishMinutes = toMinutes(endTime);
+  if (finishMinutes <= startMinutes) {
+    window.dispatchEvent(new CustomEvent('app-banner', { detail: 'End time must be after start time.' }));
+    return;
+  }
+
+  // 4) Build readable start/end strings (for display) and ISO datetimes (for DB)
+  const startString = `${time.hour.padStart(2,'0')}:${time.minute} ${time.period}`;
+  const endString = `${endTime.hour.padStart(2,'0')}:${endTime.minute} ${endTime.period}`;
+
+  // Convert to ISO datetimes (if date provided). If no date, keep null.
+  const start_datetime = seminar.date ? toISODateTime(seminar.date, time) : null;
+  const end_datetime = seminar.date ? toISODateTime(seminar.date, endTime) : null;
+
+  // 5) Create the payload we send to DB (matches lib/db.js createSeminar)
+  const payload = {
+    title: seminar.title,
+    duration: seminar.duration,
+    speaker: seminar.speaker,
+    participants: seminar.participants,
+    date: seminar.date || null,
+    start_time: startString,        // human readable
+    end_time: endString,            // human readable
+    start_datetime,                 // ISO for comparisons & ordering
+    end_datetime,
+    questions: seminar.questions || null,
+    metadata: seminar.metadata || null,
+  };
+
+  // 6) Try saving to Supabase (dbCreateSeminar), fallback to localStorage
+  try {
+    const { data, error } = await dbCreateSeminar(payload);
+
+    if (error) {
+      // Supabase returned an error — save locally and notify
+      const seminars = JSON.parse(localStorage.getItem("seminars")) || [];
+      seminars.push({ ...payload, created_locally: true, created_at: new Date().toISOString() });
+      localStorage.setItem("seminars", JSON.stringify(seminars));
+      window.dispatchEvent(new CustomEvent('app-banner', { detail: "Seminar saved locally (supabase error)." }));
+    } else {
+      // Successful insert — db usually returns the inserted row(s)
+      const created = Array.isArray(data) && data[0] ? data[0] : null;
+      const seminars = JSON.parse(localStorage.getItem("seminars")) || [];
+      seminars.push(created || { ...payload, created_at: new Date().toISOString() });
+      localStorage.setItem("seminars", JSON.stringify(seminars));
+      window.dispatchEvent(new CustomEvent('app-banner', { detail: "✅ Seminar created successfully!" }));
+    }
+  } catch (err) {
+    // Unexpected error (network, etc.) — fallback local save
+    const seminars = JSON.parse(localStorage.getItem("seminars")) || [];
+    seminars.push({ ...payload, created_locally: true, created_at: new Date().toISOString() });
+    localStorage.setItem("seminars", JSON.stringify(seminars));
+    window.dispatchEvent(new CustomEvent('app-banner', { detail: "Seminar saved locally (unexpected error)." }));
+  }
+
+  // 7) Reset form fields
+  setSeminar({ title: "", duration: "", speaker: "", participants: "" });
+  setTime({ hour: "9", minute: "00", period: "AM" });
+  setEndTime({ hour: "11", minute: "00", period: "AM" });
+
+  // 8) navigate back to admin list (you already used this)
+  navigate("/admin");
+};
 
   return (
     <div className="admin-dashboard">

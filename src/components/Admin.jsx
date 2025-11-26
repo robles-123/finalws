@@ -9,7 +9,8 @@
     const [activeTab, setActiveTab] = useState("dashboard");
     const [seminars, setSeminars] = useState([]);
     const [showSidebar, setShowSidebar] = useState(false);
-
+    const [startTime, setStartTime] = useState("");
+    const [endTime, setEndTime] = useState("");
     const [title, setTitle] = useState("");
     const [duration, setDuration] = useState("");
     const [speaker, setSpeaker] = useState("");
@@ -449,6 +450,19 @@
                     onBlur={(e) => e.target.style.borderColor = "#e0e0e0"}
                   />
                 </div>
+                <label>Seminar Start</label>
+                <input
+                  type="datetime-local"
+                  value={startTime}
+                  onChange={(e) => setStartTime(e.target.value)}
+                />
+
+                <label>Seminar End</label>
+                <input
+                  type="datetime-local"
+                  value={endTime}
+                  onChange={(e) => setEndTime(e.target.value)}
+                />
 
                 <button 
                   type="submit" 
