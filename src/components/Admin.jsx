@@ -4,17 +4,24 @@
   import "../App.css";
   import { fetchSeminars, createSeminar as dbCreateSeminar, upsertSeminar as dbUpsertSeminar, deleteSeminar as dbDeleteSeminar, fetchJoinedParticipants, saveJoinedParticipant, saveEvaluation, saveAllSeminars } from "../lib/db";
   import HamburgerToggle from './HamburgerToggle';
+  import { useNavigate } from "react-router-dom";
+
 
   function Admin({ onLogout }) {
     const [activeTab, setActiveTab] = useState("dashboard");
     const [seminars, setSeminars] = useState([]);
     const [showSidebar, setShowSidebar] = useState(false);
-
+    const [startTime, setStartTime] = useState("");
+    const [endTime, setEndTime] = useState("");
     const [title, setTitle] = useState("");
+    const [isEditing, setIsEditing] = useState(false);
+    const [editingId, setEditingId] = useState(null);
     const [duration, setDuration] = useState("");
     const [speaker, setSpeaker] = useState("");
     const [participants, setParticipants] = useState("");
     const [date, setDate] = useState("");
+    const navigate = useNavigate();
+
 
     // Load seminars from Supabase on mount, fall back to localStorage if unavailable
     useEffect(() => {
@@ -52,6 +59,26 @@
       };
     }, []);
 
+    const toISO = (localDatetime) => {
+      if (!localDatetime) return null;
+      try {
+        const d = new Date(localDatetime);
+        return d.toISOString();
+      } catch (err) {
+        return null;
+      }
+    };
+
+    const humanTime = (localDatetime) => {
+      if (!localDatetime) return null;
+      try {
+        const d = new Date(localDatetime);
+        return d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: true });
+      } catch (err) {
+        return null;
+      }
+    };
+
     const handleCreateSeminar = async (e) => {
       e.preventDefault();
       if (!title || !duration || !speaker || !participants || !date) {
@@ -65,6 +92,10 @@
         speaker,
         participants,
         date,
+        start_datetime: toISO(startTime),
+        end_datetime: toISO(endTime),
+        start_time: humanTime(startTime),
+        end_time: humanTime(endTime),
         joinedParticipants: [], // Track who joined
         questions: [   
           {
@@ -102,6 +133,7 @@
               setSeminars(updated);
               localStorage.setItem("seminars", JSON.stringify(updated));
               setTitle(""); setDuration(""); setSpeaker(""); setParticipants(""); setDate("");
+              setStartTime(""); setEndTime("");
               setIsEditing(false); setEditingId(null);
               setActiveTab('list');
               window.dispatchEvent(new CustomEvent('app-banner', { detail: "Seminar updated successfully!" }));
@@ -124,6 +156,7 @@
               setDuration("");
               setSpeaker("");
               setParticipants("");
+              setStartTime(""); setEndTime("");
               setDate("");
               window.dispatchEvent(new CustomEvent('app-banner', { detail: "Seminar created successfully!" }));
             }
@@ -143,7 +176,35 @@
         setDuration(seminar.duration || "");
         setSpeaker(seminar.speaker || "");
         setParticipants(seminar.participants || "");
-        setDate(seminar.date ? seminar.date.split('T')[0] : seminar.date || "");
+        setDate(seminar.date ? (typeof seminar.date === 'string' && seminar.date.includes('T') ? seminar.date.split('T')[0] : seminar.date) : "");
+        // populate datetime-local controls from existing values if present
+        try {
+          if (seminar.start_datetime) {
+            setStartTime(new Date(seminar.start_datetime).toISOString().slice(0,16));
+          } else if (seminar.start_time && seminar.date) {
+            // combine date + time (assumes start_time like '09:00 AM')
+            const parsed = new Date(`${seminar.date} ${seminar.start_time}`);
+            if (!isNaN(parsed)) setStartTime(parsed.toISOString().slice(0,16));
+            else setStartTime("");
+          } else {
+            setStartTime("");
+          }
+        } catch (err) {
+          setStartTime("");
+        }
+        try {
+          if (seminar.end_datetime) {
+            setEndTime(new Date(seminar.end_datetime).toISOString().slice(0,16));
+          } else if (seminar.end_time && seminar.date) {
+            const parsed = new Date(`${seminar.date} ${seminar.end_time}`);
+            if (!isNaN(parsed)) setEndTime(parsed.toISOString().slice(0,16));
+            else setEndTime("");
+          } else {
+            setEndTime("");
+          }
+        } catch (err) {
+          setEndTime("");
+        }
         setActiveTab('create');
       };
 
@@ -449,6 +510,19 @@
                     onBlur={(e) => e.target.style.borderColor = "#e0e0e0"}
                   />
                 </div>
+                <label>Seminar Start</label>
+                <input
+                  type="datetime-local"
+                  value={startTime}
+                  onChange={(e) => setStartTime(e.target.value)}
+                />
+
+                <label>Seminar End</label>
+                <input
+                  type="datetime-local"
+                  value={endTime}
+                  onChange={(e) => setEndTime(e.target.value)}
+                />
 
                 <button 
                   type="submit" 
@@ -506,6 +580,7 @@
                         cursor: "pointer",
                         position: "relative"
                       }}
+                                                
                       onMouseOver={(e) => {
                         e.currentTarget.style.boxShadow = "0 8px 24px rgba(196, 30, 58, 0.15)";
                         e.currentTarget.style.transform = "translateY(-4px)";
@@ -529,6 +604,7 @@
                         fontWeight: "600"
                       }}>
                         {getJoinedCount(s)}/{s.participants} joined
+
                       </div>
 
                       <h3 style={{

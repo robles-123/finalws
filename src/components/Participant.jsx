@@ -3,6 +3,8 @@ import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import "../App.css";
 import Evaluation from "./Evalution.jsx";
+import AttendanceScanner from "./AttendanceScanner.jsx";
+import ParticipantQRCode from "./ParticipantQRCode.jsx";
 import { fetchSeminars as dbFetchSeminars, saveJoinedParticipant, checkInParticipant } from "../lib/db";
 import HamburgerToggle from './HamburgerToggle';
 
@@ -110,14 +112,13 @@ function ParticipantDashboard({ onLogout }) {
   };
 
   const handleMarkAttendance = async (title) => {
-    // mark locally
+    // legacy support: direct mark (not used when scanner flow is enforced)
     const updated = joinedSeminars.map((s) =>
       s.title === title ? { ...s, completed: true } : s
     );
     setJoinedSeminars(updated);
     localStorage.setItem("joinedSeminars", JSON.stringify(updated));
 
-    // Try to persist attendance to Supabase
     try {
       const seminar = joinedSeminars.find((s) => s.title === title);
       if (!seminar) return;
@@ -133,6 +134,44 @@ function ParticipantDashboard({ onLogout }) {
     } catch (err) {
       console.warn('Unexpected error while persisting attendance:', err);
     }
+  };
+
+  // Scanner modal state
+  const [scanningFor, setScanningFor] = useState(null); // seminar index
+  const openScannerFor = (seminarIndex) => {
+    setScanningFor(seminarIndex);
+  };
+  const closeScanner = () => setScanningFor(null);
+
+  const handleScannerSuccess = async ({ seminarId, participantEmail }) => {
+    // mark locally by seminarId (or fallback to index)
+    const idx = scanningFor;
+    let updated = joinedSeminars;
+    if (typeof idx === 'number') {
+      updated = joinedSeminars.map((s, i) => i === idx ? { ...s, completed: true } : s);
+      setJoinedSeminars(updated);
+      localStorage.setItem('joinedSeminars', JSON.stringify(updated));
+    } else {
+      updated = joinedSeminars.map((s) => s.id === seminarId ? { ...s, completed: true } : s);
+      setJoinedSeminars(updated);
+      localStorage.setItem('joinedSeminars', JSON.stringify(updated));
+    }
+
+    // persist
+    try {
+      const res = await checkInParticipant(seminarId, participantEmail);
+      if (res.error) {
+        console.warn('Failed to persist scanner attendance to Supabase:', res.error);
+        window.dispatchEvent(new CustomEvent('app-banner', { detail: 'Attendance marked locally but failed to persist to Supabase.' }));
+      } else {
+        window.dispatchEvent(new CustomEvent('app-banner', { detail: 'Attendance recorded.' }));
+      }
+    } catch (err) {
+      console.warn('Error persisting scanner attendance:', err);
+    }
+
+    // close scanner UI
+    closeScanner();
   };
 
   const handleDeleteAttendance = (title) => {
@@ -535,8 +574,9 @@ function ParticipantDashboard({ onLogout }) {
                           Attendance Marked
                         </div>
                       ) : (
+                        <>
                         <button 
-                          onClick={() => handleMarkAttendance(s.title)}
+                          onClick={() => openScannerFor(i)}
                           style={{
                             padding: "0.75rem",
                             backgroundColor: "#c41e3a",
@@ -559,6 +599,25 @@ function ParticipantDashboard({ onLogout }) {
                         >
                           Mark as Present
                         </button>
+                        {scanningFor === i && (
+                          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 3000, padding: 20 }}>
+                            <div style={{ width: '100%', maxWidth: 820, background: '#fff', borderRadius: 12, padding: 18, boxShadow: '0 20px 60px rgba(0,0,0,0.35)', maxHeight: '90vh', overflow: 'auto' }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                                <h3 style={{ margin: 0, color: '#1a3a52' }}>Scan QR to Mark Attendance</h3>
+                                <button onClick={closeScanner} aria-label="Close scanner" style={{ background: 'transparent', border: 'none', fontSize: 20, cursor: 'pointer', color: '#666' }}>✕</button>
+                              </div>
+                              <div style={{ display: 'flex', gap: 16, flexDirection: 'column', alignItems: 'center' }}>
+                                <div style={{ fontSize: 14, color: '#555', marginBottom: 6, textAlign: 'center' }}>Show this QR code to the attendance scanner/staff. No camera needed on your device.</div>
+                                <ParticipantQRCode seminarId={s.id} email={localStorage.getItem('participantEmail') || localStorage.getItem('userEmail') || ''} size={240} />
+                                <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
+                                  <button onClick={async () => { const participantEmail = localStorage.getItem('participantEmail') || localStorage.getItem('userEmail') || ''; await handleScannerSuccess({ seminarId: s.id, participantEmail }); }} style={{ padding: '0.6rem 1rem', background: '#007bff', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer' }}>Mark Present</button>
+                                  <button onClick={closeScanner} style={{ padding: '0.6rem 1rem', background: '#f5f5f5', color: '#333', border: '1px solid #e0e0e0', borderRadius: 8, cursor: 'pointer' }}>Close</button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                        </>
                       )}
                       <button 
                         onClick={() => handleDeleteAttendance(s.title)}

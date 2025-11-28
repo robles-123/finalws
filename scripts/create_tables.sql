@@ -9,6 +9,13 @@ create table if not exists seminars (
   speaker text,
   capacity int,
   date date,
+  -- optional start/end datetimes (canonical) and human-readable times
+  start_datetime timestamptz,
+  end_datetime timestamptz,
+  start_time text,
+  end_time text,
+  -- optional certificate template URL
+  certificate_template_url text,
   questions jsonb,
   metadata jsonb,
   created_at timestamptz default now(),
