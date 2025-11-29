@@ -1,0 +1,43 @@
+<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <!-- Left side floating dots (data input) -->
+  <circle cx="50" cy="100" r="12" fill="#00a8ff"/>
+  <circle cx="80" cy="170" r="10" fill="#00a8ff"/>
+  <circle cx="55" cy="260" r="11" fill="#00a8ff"/>
+  <circle cx="90" cy="340" r="9" fill="#00a8ff"/>
+  <circle cx="70" cy="410" r="10" fill="#00a8ff"/>
+  
+  <!-- Head outline (profile view) -->
+  <g fill="none" stroke="#00a8ff" stroke-width="11" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Head shape -->
+    <path d="M 220 80 Q 300 60 340 110 Q 380 150 390 220 L 390 360 Q 380 410 320 440 L 240 440 Q 170 410 160 360 L 160 220 Q 170 150 220 80 Z"/>
+    
+    <!-- Neural connections inside head -->
+    <path d="M 200 150 L 260 180 L 310 140"/>
+    <path d="M 260 180 L 320 200 L 360 160"/>
+    <path d="M 210 260 L 280 280 L 330 250"/>
+    <path d="M 280 280 L 350 310 L 370 280"/>
+    <path d="M 240 360 L 300 350 L 350 380"/>
+  </g>
+  
+  <!-- Neural network nodes/dots -->
+  <g fill="#00a8ff">
+    <!-- Upper layer -->
+    <circle cx="200" cy="150" r="10"/>
+    <circle cx="260" cy="180" r="10"/>
+    <circle cx="310" cy="140" r="9"/>
+    <circle cx="320" cy="200" r="9"/>
+    <circle cx="360" cy="160" r="8"/>
+    
+    <!-- Middle layer -->
+    <circle cx="210" cy="260" r="9"/>
+    <circle cx="280" cy="280" r="10"/>
+    <circle cx="330" cy="250" r="9"/>
+    <circle cx="350" cy="310" r="8"/>
+    <circle cx="370" cy="280" r="8"/>
+    
+    <!-- Lower layer -->
+    <circle cx="240" cy="360" r="9"/>
+    <circle cx="300" cy="350" r="9"/>
+    <circle cx="350" cy="380" r="10"/>
+  </g>
+</svg>

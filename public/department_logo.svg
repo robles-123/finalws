@@ -1,0 +1,30 @@
+<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <!-- Building/Institution shape -->
+  <g fill="none" stroke="#00a8ff" stroke-width="10" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Main building outline -->
+    <rect x="100" y="140" width="312" height="300" rx="12"/>
+    
+    <!-- Door -->
+    <rect x="210" y="340" width="92" height="100" rx="6"/>
+    <line x1="256" y1="340" x2="256" y2="440"/>
+    
+    <!-- Windows grid -->
+    <rect x="130" y="170" width="50" height="50" rx="3"/>
+    <rect x="210" y="170" width="50" height="50" rx="3"/>
+    <rect x="290" y="170" width="50" height="50" rx="3"/>
+    <rect x="350" y="170" width="50" height="50" rx="3"/>
+    
+    <rect x="130" y="260" width="50" height="50" rx="3"/>
+    <rect x="210" y="260" width="50" height="50" rx="3"/>
+    <rect x="290" y="260" width="50" height="50" rx="3"/>
+    <rect x="350" y="260" width="50" height="50" rx="3"/>
+    
+    <!-- Roof/Top accent -->
+    <path d="M 80 140 L 256 60 L 432 140"/>
+  </g>
+  
+  <!-- Decorative elements -->
+  <circle cx="130" cy="80" r="8" fill="#00a8ff"/>
+  <circle cx="256" cy="40" r="8" fill="#00a8ff"/>
+  <circle cx="382" cy="80" r="8" fill="#00a8ff"/>
+</svg>

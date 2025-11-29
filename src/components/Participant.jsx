@@ -183,6 +183,21 @@ function ParticipantDashboard({ onLogout }) {
 
   // Generate certificate with professional design using PNG images
   const generateCertificate = async (seminar) => {
+    // Load certificate design from localStorage (saved by admin)
+    const savedDesignStr = localStorage.getItem('certificateDesign');
+    const certDesign = savedDesignStr ? JSON.parse(savedDesignStr) : {
+      backgroundType: 'gradient',
+      backgroundColor: '#ffffff',
+      gradientStart: '#ffffff',
+      gradientEnd: '#f5f7fa',
+      backgroundImage: '',
+      watermarkType: 'none',
+      watermarkText: 'Masking Unsa.',
+      watermarkOpacity: 0.08,
+      watermarkSize: 500,
+      accentColor: '#c41e3a'
+    };
+
     const certDiv = document.createElement("div");
     certDiv.style.width = "1200px";
     certDiv.style.height = "850px";
@@ -191,54 +206,65 @@ function ParticipantDashboard({ onLogout }) {
     certDiv.style.position = "relative";
     certDiv.style.fontFamily = "'Georgia', 'Garamond', serif";
     certDiv.style.color = "#1a3a52";
-    // Apply custom certificate background if participant set one (color or image URL)
-    const certBg = localStorage.getItem(`certBg:${seminar.id}`) || localStorage.getItem('certificateBackground');
-    if (certBg) {
-      if (certBg.startsWith('#') || certBg.startsWith('rgb')) {
-        certDiv.style.background = certBg;
-      } else {
-        certDiv.style.backgroundImage = `url('${certBg}')`;
-        certDiv.style.backgroundSize = 'cover';
-        certDiv.style.backgroundPosition = 'center';
-      }
-    } else {
-      certDiv.style.background = "linear-gradient(135deg, #ffffff 0%, #f5f7fa 100%)";
+    
+    // Apply custom certificate background based on design settings
+    if (certDesign.backgroundType === 'gradient') {
+      certDiv.style.background = `linear-gradient(135deg, ${certDesign.gradientStart} 0%, ${certDesign.gradientEnd} 100%)`;
+    } else if (certDesign.backgroundType === 'color') {
+      certDiv.style.background = certDesign.backgroundColor;
+    } else if (certDesign.backgroundType === 'image' && certDesign.backgroundImage) {
+      certDiv.style.backgroundImage = `url('${certDesign.backgroundImage}')`;
+      certDiv.style.backgroundSize = 'cover';
+      certDiv.style.backgroundPosition = 'center';
     }
-    certDiv.style.border = "4px solid #c41e3a";
+    
+    certDiv.style.border = `4px solid ${certDesign.accentColor}`;
     certDiv.style.borderRadius = "4px";
     certDiv.style.boxShadow = "0 10px 40px rgba(0,0,0,0.1)";
     
     const logoImg = new Image();
-    logoImg.src = "/logo.png";
+    logoImg.src = "/logo.svg";
     
     const deptLogoImg = new Image();
-    deptLogoImg.src = "/department_logo.png";
+    deptLogoImg.src = "/department_logo.svg";
+    
+    // Build watermark HTML
+    let watermarkHTML = '';
+    if (certDesign.watermarkType === 'logo') {
+      watermarkHTML = `<img src="/logo.svg" alt="Watermark"
+        style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+               width: ${certDesign.watermarkSize}px; opacity: ${certDesign.watermarkOpacity}; z-index: 0;" />`;
+    } else if (certDesign.watermarkType === 'text') {
+      watermarkHTML = `<div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+               opacity: ${certDesign.watermarkOpacity}; z-index: 0; font-size: 72px; color: #1a3a52; 
+               font-weight: 300; letter-spacing: 3px; white-space: nowrap; transform: translate(-50%, -50%) rotate(-15deg);">
+               ${certDesign.watermarkText}
+             </div>`;
+    }
     
     certDiv.innerHTML = `
       <div style="position: relative; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center;">
         
         <!-- Top Section with Logos -->
         <div style="position: absolute; top: 30px; width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 0 40px;">
-          <img src="/department_logo.png" alt="Department Logo" style="width: 100px; height: auto;" />
-          <img src="/logo.png" alt="Organization Logo" style="width: 100px; height: auto;" />
+          <img src="/department_logo.svg" alt="Department Logo" style="width: 100px; height: auto;" />
+          <img src="/logo.svg" alt="Organization Logo" style="width: 100px; height: auto;" />
         </div>
 
-        <!-- Faint Watermark Background -->
-        <img src="/logo.png" alt="Watermark"
-          style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-                 width: 500px; opacity: 0.08; z-index: 0;" />
+        <!-- Watermark Background -->
+        ${watermarkHTML}
 
         <!-- Certificate Content -->
         <div style="position: relative; z-index: 1;">
           <!-- Certificate Header -->
           <div style="margin-bottom: 20px;">
-            <p style="font-size: 18px; font-weight: 600; letter-spacing: 2px; color: #c41e3a; margin: 0;">
+            <p style="font-size: 18px; font-weight: 600; letter-spacing: 2px; color: ${certDesign.accentColor}; margin: 0;">
               CERTIFICATE OF PARTICIPATION
             </p>
           </div>
 
           <!-- Decorative Line -->
-          <div style="width: 300px; height: 2px; background: linear-gradient(90deg, transparent, #c41e3a, transparent); margin: 20px auto;"></div>
+          <div style="width: 300px; height: 2px; background: linear-gradient(90deg, transparent, ${certDesign.accentColor}, transparent); margin: 20px auto;"></div>
 
           <!-- Main Text -->
           <p style="font-size: 20px; margin: 30px 0 10px 0; color: #333;">This is to certify that</p>
@@ -252,7 +278,7 @@ function ParticipantDashboard({ onLogout }) {
           <p style="font-size: 18px; margin: 30px 0;">has successfully completed and participated in</p>
 
           <!-- Seminar Title -->
-          <h3 style="font-size: 28px; margin: 20px 0 30px 0; color: #c41e3a; font-style: italic; font-weight: 600;">
+          <h3 style="font-size: 28px; margin: 20px 0 30px 0; color: ${certDesign.accentColor}; font-style: italic; font-weight: 600;">
             ${seminar.title}
           </h3>
 
@@ -276,15 +302,15 @@ function ParticipantDashboard({ onLogout }) {
           </p>
 
           <!-- Signature Section -->
-          <div style="display: flex; justify-content: center; gap: 100px; margin-top: 60px; padding-top: 40px; border-top: 2px solid #c41e3a;">
+          <div style="display: flex; justify-content: center; gap: 100px; margin-top: 60px; padding-top: 40px; border-top: 2px solid ${certDesign.accentColor};">
             <div style="text-align: center;">
-              <div style="width: 180px; height: 80px; margin-bottom: 10px; display: flex; align-items: flex-end; justify-content: center; font-size: 48px; color: #c41e3a; font-weight: bold;">
+              <div style="width: 180px; height: 80px; margin-bottom: 10px; display: flex; align-items: flex-end; justify-content: center; font-size: 48px; color: ${certDesign.accentColor}; font-weight: bold;">
                 /
               </div>
               <p style="font-size: 14px; margin: 5px 0 0 0; color: #333;">Authorized Signature</p>
             </div>
             <div style="text-align: center;">
-              <div style="width: 180px; height: 80px; margin-bottom: 10px; display: flex; align-items: flex-end; justify-content: center; font-size: 48px; color: #c41e3a; font-weight: bold;">
+              <div style="width: 180px; height: 80px; margin-bottom: 10px; display: flex; align-items: flex-end; justify-content: center; font-size: 48px; color: ${certDesign.accentColor}; font-weight: bold;">
                 /
               </div>
               <p style="font-size: 14px; margin: 5px 0 0 0; color: #333;">Seal or Stamp</p>
@@ -298,14 +324,10 @@ function ParticipantDashboard({ onLogout }) {
         </div>
 
         <!-- Decorative Corner Elements -->
-        <div style="position: absolute; top: 15px; left: 15px; width: 30px; height: 30px; border-top: 3px solid #c41e3a; border-left: 3px solid #c41e3a;"></div>
-        <div style="position: absolute; top: 15px; right: 15px; width: 30px; height: 30px; border-top: 3px solid #c41e3a; border-right: 3px solid #c41e3a;"></div>
-        <div style="position: absolute; bottom: 15px; left: 15px; width: 30px; height: 30px; border-bottom: 3px solid #c41e3a; border-left: 3px solid #c41e3a;"></div>
-        <div style="position: absolute; bottom: 15px; right: 15px; width: 30px; height: 30px; border-bottom: 3px solid #c41e3a; border-right: 3px solid #c41e3a;"></div>
-        <!-- Bottom-right watermark text -->
-        <div style="position: absolute; bottom: 24px; right: 24px; opacity: 0.12; color: #1a3a52; font-size: 18px; transform: rotate(-10deg);">
-          Masking Unsa.
-        </div>
+        <div style="position: absolute; top: 15px; left: 15px; width: 30px; height: 30px; border-top: 3px solid ${certDesign.accentColor}; border-left: 3px solid ${certDesign.accentColor};"></div>
+        <div style="position: absolute; top: 15px; right: 15px; width: 30px; height: 30px; border-top: 3px solid ${certDesign.accentColor}; border-right: 3px solid ${certDesign.accentColor};"></div>
+        <div style="position: absolute; bottom: 15px; left: 15px; width: 30px; height: 30px; border-bottom: 3px solid ${certDesign.accentColor}; border-left: 3px solid ${certDesign.accentColor};"></div>
+        <div style="position: absolute; bottom: 15px; right: 15px; width: 30px; height: 30px; border-bottom: 3px solid ${certDesign.accentColor}; border-right: 3px solid ${certDesign.accentColor};"></div>
       </div>
     `;
 
@@ -551,6 +573,14 @@ function ParticipantDashboard({ onLogout }) {
                       </div>
                       <div>
                         <p style={{ margin: "0 0 0.3rem 0", color: "#999", fontSize: "0.85rem", fontWeight: "600", textTransform: "uppercase", letterSpacing: "0.3px" }}>
+                          Time
+                        </p>
+                        <p style={{ margin: 0, color: "#1a3a52", fontSize: "1rem", fontWeight: "500" }}>
+                          {s.start_time && s.end_time ? `${s.start_time} - ${s.end_time}` : s.start_time || 'TBA'}
+                        </p>
+                      </div>
+                      <div>
+                        <p style={{ margin: "0 0 0.3rem 0", color: "#999", fontSize: "0.85rem", fontWeight: "600", textTransform: "uppercase", letterSpacing: "0.3px" }}>
                           Instructor
                         </p>
                         <p style={{ margin: 0, color: "#1a3a52", fontSize: "1rem", fontWeight: "500" }}>
@@ -763,7 +793,7 @@ function ParticipantDashboard({ onLogout }) {
     <div className="participant-layout">
       <aside id="participant-sidebar" className={`participant-sidebar ${showSidebar ? 'sidebar--open' : ''}`} role="navigation" aria-label="Participant sidebar">
         <div className="sidebar-header" style={{ textAlign: "center", paddingBottom: "1.5rem", borderBottom: "2px solid rgba(255, 255, 255, 0.2)" }}>
-          <img src="/logo.png" alt="Logo" style={{ width: "50px", height: "50px", marginBottom: "0.8rem" }} />
+          <img src="/logo.svg" alt="Logo" style={{ width: "50px", height: "50px", marginBottom: "0.8rem" }} />
           <h2 style={{ margin: 0, fontSize: "1.3rem", fontWeight: "700" }}>Participant</h2>
           <p style={{ margin: "0.3rem 0 0 0", fontSize: "0.85rem", opacity: 0.9 }}>Seminar System</p>
         </div>

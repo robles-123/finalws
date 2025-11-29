@@ -20,12 +20,35 @@
     const [speaker, setSpeaker] = useState("");
     const [participants, setParticipants] = useState("");
     const [date, setDate] = useState("");
+    const [showCertDesignModal, setShowCertDesignModal] = useState(false);
+    const [certDesign, setCertDesign] = useState({
+      backgroundType: 'gradient', // 'gradient', 'color', 'image'
+      backgroundColor: '#ffffff',
+      gradientStart: '#ffffff',
+      gradientEnd: '#f5f7fa',
+      backgroundImage: '',
+      watermarkType: 'none', // 'none', 'logo', 'text'
+      watermarkText: 'Masking Unsa.',
+      watermarkOpacity: 0.08,
+      watermarkSize: 500,
+      accentColor: '#c41e3a'
+    });
     const navigate = useNavigate();
 
 
     // Load seminars from Supabase on mount, fall back to localStorage if unavailable
     useEffect(() => {
       let mounted = true;
+
+      // Load saved certificate design
+      const savedDesign = localStorage.getItem('certificateDesign');
+      if (savedDesign) {
+        try {
+          setCertDesign(JSON.parse(savedDesign));
+        } catch (err) {
+          console.error('Failed to load certificate design:', err);
+        }
+      }
 
       async function load() {
         try {
@@ -267,6 +290,384 @@
       return () => { mounted = false; };
     }, [seminars]);
 
+    // Save certificate design to localStorage
+    const saveCertificateDesign = () => {
+      localStorage.setItem('certificateDesign', JSON.stringify(certDesign));
+      window.dispatchEvent(new CustomEvent('app-banner', { detail: 'Certificate design saved successfully!' }));
+      setShowCertDesignModal(false);
+    };
+
+    // Reset design to defaults
+    const resetCertificateDesign = () => {
+      const defaultDesign = {
+        backgroundType: 'gradient',
+        backgroundColor: '#ffffff',
+        gradientStart: '#ffffff',
+        gradientEnd: '#f5f7fa',
+        backgroundImage: '',
+        watermarkType: 'none',
+        watermarkText: 'Masking Unsa.',
+        watermarkOpacity: 0.08,
+        watermarkSize: 500,
+        accentColor: '#c41e3a'
+      };
+      setCertDesign(defaultDesign);
+    };
+
+    // Render Certificate Design Customization Modal
+    const renderCertDesignModal = () => {
+      return (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          backgroundColor: 'rgba(0,0,0,0.6)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 5000,
+          padding: '20px'
+        }}>
+          <div style={{
+            backgroundColor: '#fff',
+            borderRadius: '12px',
+            padding: '30px',
+            maxWidth: '600px',
+            width: '100%',
+            maxHeight: '90vh',
+            overflow: 'auto',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.3)'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h2 style={{ margin: 0, color: '#1a3a52' }}>Certificate Design</h2>
+              <button 
+                onClick={() => setShowCertDesignModal(false)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  fontSize: '24px',
+                  cursor: 'pointer',
+                  color: '#999'
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Background Type Selection */}
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#1a3a52' }}>
+                Background Type
+              </label>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+                {['gradient', 'color', 'image'].map(type => (
+                  <button
+                    key={type}
+                    onClick={() => setCertDesign({ ...certDesign, backgroundType: type })}
+                    style={{
+                      padding: '10px',
+                      borderRadius: '8px',
+                      border: certDesign.backgroundType === type ? '2px solid #c41e3a' : '1px solid #e0e0e0',
+                      backgroundColor: certDesign.backgroundType === type ? '#fff8f9' : '#f9f9f9',
+                      cursor: 'pointer',
+                      fontWeight: '500',
+                      color: certDesign.backgroundType === type ? '#c41e3a' : '#666',
+                      transition: 'all 0.3s'
+                    }}
+                  >
+                    {type.charAt(0).toUpperCase() + type.slice(1)}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Gradient Options */}
+            {certDesign.backgroundType === 'gradient' && (
+              <div style={{ marginBottom: '20px' }}>
+                <div style={{ marginBottom: '12px' }}>
+                  <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.9rem', color: '#1a3a52', fontWeight: '500' }}>
+                    Start Color
+                  </label>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <input
+                      type="color"
+                      value={certDesign.gradientStart}
+                      onChange={(e) => setCertDesign({ ...certDesign, gradientStart: e.target.value })}
+                      style={{ width: '50px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
+                    />
+                    <input
+                      type="text"
+                      value={certDesign.gradientStart}
+                      onChange={(e) => setCertDesign({ ...certDesign, gradientStart: e.target.value })}
+                      style={{ flex: 1, padding: '8px', border: '1px solid #e0e0e0', borderRadius: '6px', fontFamily: 'monospace', fontSize: '0.9rem' }}
+                    />
+                  </div>
+                </div>
+                <div style={{ marginBottom: '12px' }}>
+                  <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.9rem', color: '#1a3a52', fontWeight: '500' }}>
+                    End Color
+                  </label>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <input
+                      type="color"
+                      value={certDesign.gradientEnd}
+                      onChange={(e) => setCertDesign({ ...certDesign, gradientEnd: e.target.value })}
+                      style={{ width: '50px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
+                    />
+                    <input
+                      type="text"
+                      value={certDesign.gradientEnd}
+                      onChange={(e) => setCertDesign({ ...certDesign, gradientEnd: e.target.value })}
+                      style={{ flex: 1, padding: '8px', border: '1px solid #e0e0e0', borderRadius: '6px', fontFamily: 'monospace', fontSize: '0.9rem' }}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Solid Color Option */}
+            {certDesign.backgroundType === 'color' && (
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.9rem', color: '#1a3a52', fontWeight: '500' }}>
+                  Background Color
+                </label>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <input
+                    type="color"
+                    value={certDesign.backgroundColor}
+                    onChange={(e) => setCertDesign({ ...certDesign, backgroundColor: e.target.value })}
+                    style={{ width: '50px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
+                  />
+                  <input
+                    type="text"
+                    value={certDesign.backgroundColor}
+                    onChange={(e) => setCertDesign({ ...certDesign, backgroundColor: e.target.value })}
+                    style={{ flex: 1, padding: '8px', border: '1px solid #e0e0e0', borderRadius: '6px', fontFamily: 'monospace', fontSize: '0.9rem' }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Image URL Option */}
+            {certDesign.backgroundType === 'image' && (
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.9rem', color: '#1a3a52', fontWeight: '500' }}>
+                  Image URL
+                </label>
+                <input
+                  type="text"
+                  placeholder="https://example.com/image.jpg"
+                  value={certDesign.backgroundImage}
+                  onChange={(e) => setCertDesign({ ...certDesign, backgroundImage: e.target.value })}
+                  style={{ width: '100%', padding: '8px', border: '1px solid #e0e0e0', borderRadius: '6px', boxSizing: 'border-box' }}
+                />
+              </div>
+            )}
+
+            {/* Watermark Type Selection */}
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#1a3a52' }}>
+                Watermark
+              </label>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+                {['none', 'logo', 'text'].map(type => (
+                  <button
+                    key={type}
+                    onClick={() => setCertDesign({ ...certDesign, watermarkType: type })}
+                    style={{
+                      padding: '10px',
+                      borderRadius: '8px',
+                      border: certDesign.watermarkType === type ? '2px solid #c41e3a' : '1px solid #e0e0e0',
+                      backgroundColor: certDesign.watermarkType === type ? '#fff8f9' : '#f9f9f9',
+                      cursor: 'pointer',
+                      fontWeight: '500',
+                      color: certDesign.watermarkType === type ? '#c41e3a' : '#666',
+                      transition: 'all 0.3s'
+                    }}
+                  >
+                    {type === 'none' ? 'None' : type.charAt(0).toUpperCase() + type.slice(1)}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Watermark Text Option */}
+            {certDesign.watermarkType === 'text' && (
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.9rem', color: '#1a3a52', fontWeight: '500' }}>
+                  Watermark Text
+                </label>
+                <input
+                  type="text"
+                  value={certDesign.watermarkText}
+                  onChange={(e) => setCertDesign({ ...certDesign, watermarkText: e.target.value })}
+                  style={{ width: '100%', padding: '8px', border: '1px solid #e0e0e0', borderRadius: '6px', boxSizing: 'border-box', marginBottom: '12px' }}
+                />
+                <div>
+                  <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.85rem', color: '#666' }}>
+                    Opacity: {(certDesign.watermarkOpacity * 100).toFixed(0)}%
+                  </label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.01"
+                    value={certDesign.watermarkOpacity}
+                    onChange={(e) => setCertDesign({ ...certDesign, watermarkOpacity: parseFloat(e.target.value) })}
+                    style={{ width: '100%' }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Watermark Logo Size */}
+            {certDesign.watermarkType === 'logo' && (
+              <div style={{ marginBottom: '20px' }}>
+                <div style={{ marginBottom: '12px' }}>
+                  <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.85rem', color: '#666' }}>
+                    Logo Size: {certDesign.watermarkSize}px
+                  </label>
+                  <input
+                    type="range"
+                    min="200"
+                    max="800"
+                    step="10"
+                    value={certDesign.watermarkSize}
+                    onChange={(e) => setCertDesign({ ...certDesign, watermarkSize: parseInt(e.target.value) })}
+                    style={{ width: '100%' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.85rem', color: '#666' }}>
+                    Opacity: {(certDesign.watermarkOpacity * 100).toFixed(0)}%
+                  </label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.01"
+                    value={certDesign.watermarkOpacity}
+                    onChange={(e) => setCertDesign({ ...certDesign, watermarkOpacity: parseFloat(e.target.value) })}
+                    style={{ width: '100%' }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Accent Color */}
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.9rem', color: '#1a3a52', fontWeight: '500' }}>
+                Accent Color
+              </label>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <input
+                  type="color"
+                  value={certDesign.accentColor}
+                  onChange={(e) => setCertDesign({ ...certDesign, accentColor: e.target.value })}
+                  style={{ width: '50px', height: '40px', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
+                />
+                <input
+                  type="text"
+                  value={certDesign.accentColor}
+                  onChange={(e) => setCertDesign({ ...certDesign, accentColor: e.target.value })}
+                  style={{ flex: 1, padding: '8px', border: '1px solid #e0e0e0', borderRadius: '6px', fontFamily: 'monospace', fontSize: '0.9rem' }}
+                />
+              </div>
+            </div>
+
+            {/* Preview */}
+            <div style={{
+              marginBottom: '20px',
+              padding: '15px',
+              borderRadius: '8px',
+              border: '2px solid #e0e0e0',
+              background: certDesign.backgroundType === 'gradient' 
+                ? `linear-gradient(135deg, ${certDesign.gradientStart} 0%, ${certDesign.gradientEnd} 100%)`
+                : certDesign.backgroundType === 'color'
+                ? certDesign.backgroundColor
+                : '#f5f5f5',
+              minHeight: '100px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: certDesign.accentColor,
+              fontSize: '18px',
+              fontWeight: 'bold',
+              borderColor: certDesign.accentColor
+            }}>
+              Certificate Preview
+            </div>
+
+            {/* Action Buttons */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
+              <button
+                onClick={resetCertificateDesign}
+                style={{
+                  padding: '10px',
+                  backgroundColor: '#f5f5f5',
+                  border: '1px solid #e0e0e0',
+                  borderRadius: '8px',
+                  color: '#666',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.backgroundColor = '#efefef';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.backgroundColor = '#f5f5f5';
+                }}
+              >
+                Reset
+              </button>
+              <button
+                onClick={() => setShowCertDesignModal(false)}
+                style={{
+                  padding: '10px',
+                  backgroundColor: '#f5f5f5',
+                  border: '1px solid #e0e0e0',
+                  borderRadius: '8px',
+                  color: '#666',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.backgroundColor = '#efefef';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.backgroundColor = '#f5f5f5';
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={saveCertificateDesign}
+                style={{
+                  padding: '10px',
+                  backgroundColor: '#c41e3a',
+                  border: 'none',
+                  borderRadius: '8px',
+                  color: '#fff',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.backgroundColor = '#a01831';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.backgroundColor = '#c41e3a';
+                }}
+              >
+                Save Design
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
     return (
       <div className="admin-dashboard">
         {/* Hamburger toggle button */}
@@ -284,7 +685,7 @@
             {showSidebar && (
               <button onClick={() => setShowSidebar(false)} style={{ position: 'absolute', right: 12, top: 12, border: 'none', background: 'none', color: '#fff', cursor: 'pointer' }}>✕</button>
             )}
-            <img src="/logo.png" alt="Logo" style={{ width: "60px", height: "60px", marginBottom: "0.8rem" }} />
+            <img src="/logo.svg" alt="Logo" style={{ width: "60px", height: "60px", marginBottom: "0.8rem" }} />
             <h2 className="logo" style={{ margin: 0, fontSize: "1.3rem", color: "#ffffff", fontWeight: "700" }}>VPAA System</h2>
           </div>
           <ul>
@@ -310,6 +711,33 @@
                 {activeTab === "list" && "View and manage all seminars"}
               </p>
             </div>
+            {activeTab === "dashboard" && (
+              <button
+                onClick={() => setShowCertDesignModal(true)}
+                style={{
+                  padding: "0.75rem 1.5rem",
+                  backgroundColor: "#2e5266",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: "8px",
+                  fontSize: "0.95rem",
+                  fontWeight: "600",
+                  cursor: "pointer",
+                  transition: "all 0.3s",
+                  whiteSpace: "nowrap"
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.backgroundColor = "#1a3a52";
+                  e.currentTarget.style.boxShadow = "0 4px 12px rgba(30,82,102,0.3)";
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.backgroundColor = "#2e5266";
+                  e.currentTarget.style.boxShadow = "none";
+                }}
+              >
+                🎨 Customize Certificate Design
+              </button>
+            )}
           </header>
 
           {/* sync button removed */}
@@ -702,6 +1130,7 @@
             </div>
           )}
         </main>
+        {showCertDesignModal && renderCertDesignModal()}
       </div>
     );
   }

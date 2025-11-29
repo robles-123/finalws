@@ -26,7 +26,7 @@ function Login({ onLogin }) {
           paddingBottom: "1.5rem",
           borderBottom: "2px solid #e0e0e0"
         }}>
-          <img src="/logo.png" alt="Logo" style={{ width: "80px", height: "80px", marginBottom: "1rem" }} />
+          <img src="/logo.svg" alt="Logo" style={{ width: "80px", height: "80px", marginBottom: "1rem" }} />
           <h1 style={{ fontSize: "1.5rem", color: "#1a3a52", margin: "0 0 0.5rem 0", fontWeight: "700" }}>
             VPAA Seminar System
           </h1>

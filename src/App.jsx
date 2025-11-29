@@ -6,6 +6,7 @@ import Admin from "./components/Admin";
 import Profile from "./components/Profile";
 import Participant from "./components/Participant";
 import CreateSeminar from "./components/CreateSeminar";
+import QRRedirect from "./components/QRRedirect";
 import { supabase } from "./lib/supabaseClient";
 
 function App() {
@@ -114,6 +115,10 @@ function App() {
         <Route
           path="/create-seminar"
           element={<CreateSeminar onLogout={handleLogout} />}
+        />
+        <Route
+          path="/qr"
+          element={<QRRedirect />}
         />
       </Routes>
       <footer className="footer">
