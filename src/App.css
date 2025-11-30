@@ -8,6 +8,33 @@ body {
   color: #1a3a52;
 }
 
+/* Global bottom-right watermark (faint logo across the whole app) */
+#global-watermark {
+  position: fixed;
+  right: 18px;
+  bottom: 12px;
+  width: 160px;
+  height: auto;
+  opacity: 0.16; /* slightly more visible */
+  pointer-events: none;
+  z-index: 9998; /* below app-banner (9999) but above page content */
+  mix-blend-mode: multiply;
+  filter: grayscale(40%);
+}
+
+@media (max-width: 800px) {
+  #global-watermark {
+    width: 110px;
+    right: 12px;
+    bottom: 10px;
+    opacity: 0.12;
+  }
+}
+
+@media (max-width: 420px) {
+  #global-watermark { display: none; }
+}
+
 /* Top-level non-blocking banner used for global messages (e.g. missing env keys) */
 .app-banner {
   position: fixed;
@@ -269,6 +296,53 @@ button {
   overflow-x: hidden;
 }
 
+/* Make participant pages match admin layout: center content and constrain width */
+
+.participant-content {
+  flex: 1;
+  padding: 3.25rem 2rem 2rem 2rem; /* match .content */
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* center inner content */
+}
+
+/* keep header and section aligned with admin by constraining their width */
+.participant-content > .content-header,
+.participant-content > .section-content {
+  width: 100%;
+  max-width: 1200px;
+  box-sizing: border-box;
+}
+
+.section-content {
+  display: block;
+}
+
+/* Evaluation section should fill the section-content width and match seminar styling */
+.evaluation-section {
+  width: 100%;
+  box-sizing: border-box;
+}
+.evaluation-section .evaluation-title {
+  margin-left: 0;
+}
+.evaluation-section > div,
+.evaluation-section > form,
+.evaluation-section > .grid {
+  width: 100%;
+}
+.evaluation-section .grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1.5rem;
+}
+
+/* Make seminar cards inside participant page use consistent card styling and spacing */
+.section-content > .card, .section-content > div > .card {
+  margin-bottom: 1.25rem;
+}
+
 .content-header h1 {
   font-size: 2rem;
   color: #1a3a52;
@@ -414,14 +488,13 @@ button {
   flex-direction: column;
   justify-content: space-between;
   padding: 2rem 1rem;
-}
-
-/* make participant sidebar collapsible on small screens */
-.participant-sidebar {
-  transform: translateX(-110%);
+  /* visible by default on desktop so content lines up like Admin */
+  transform: none;
   transition: transform 280ms cubic-bezier(.2,.8,.2,1), box-shadow 280ms;
 }
+
 .participant-sidebar.sidebar--open {
+  /* when forced open on small screens we keep the slide-in style */
   transform: translateX(0);
   position: fixed;
   left: 0;
@@ -455,7 +528,7 @@ button {
   flex: 1;
   /* slightly reduce participant content padding to tighten layout without
      making drastic appearance changes */
-  padding: 1.5rem;
+  padding: 1.5rem;  
 }
 
 /* Sidebar slide-in/out and overlay for admin (mobile-first) */
@@ -529,6 +602,25 @@ button {
   .sidebar { transform: translateX(-110%); }
   .participant-sidebar { transform: translateX(-110%); }
   .sidebar-overlay { display: none; }
+}
+
+/* Desktop: make participant sidebar fixed and let content sit to its right (like Admin) */
+@media (min-width: 900px) {
+  .participant-sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    height: 100vh;
+    width: clamp(200px, 18vw, 260px);
+    transform: none !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+    z-index: 1200;
+  }
+
+  .participant-content {
+    margin-left: clamp(100px, 18vw, 100px);
+  }
 }
 
 /* Desktop: nudge the logout button higher inside an open (inline) sidebar */

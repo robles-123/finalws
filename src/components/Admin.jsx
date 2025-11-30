@@ -31,7 +31,11 @@
       watermarkText: 'Masking Unsa.',
       watermarkOpacity: 0.08,
       watermarkSize: 500,
-      accentColor: '#c41e3a'
+      accentColor: '#c41e3a',
+      // New fields for signatures/seal
+      authorizedSignatureName: '',
+      authorizedSignatureImage: '', // can be URL or dataURL
+      sealImage: '' // URL or dataURL
     });
     const navigate = useNavigate();
 
@@ -309,7 +313,10 @@
         watermarkText: 'Masking Unsa.',
         watermarkOpacity: 0.08,
         watermarkSize: 500,
-        accentColor: '#c41e3a'
+        accentColor: '#c41e3a',
+        authorizedSignatureName: '',
+        authorizedSignatureImage: '',
+        sealImage: ''
       };
       setCertDesign(defaultDesign);
     };
@@ -574,6 +581,76 @@
               </div>
             </div>
 
+            {/* Signature / Seal Inputs */}
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.9rem', color: '#1a3a52', fontWeight: '500' }}>
+                Authorized Signature (name and image)
+              </label>
+              <input
+                type="text"
+                placeholder="Name to show under signature"
+                value={certDesign.authorizedSignatureName || ''}
+                onChange={(e) => setCertDesign({ ...certDesign, authorizedSignatureName: e.target.value })}
+                style={{ width: '100%', padding: '8px', border: '1px solid #e0e0e0', borderRadius: '6px', boxSizing: 'border-box', marginBottom: '8px' }}
+              />
+              <input
+                type="text"
+                placeholder="Signature image URL (https://...) or leave empty to upload"
+                value={certDesign.authorizedSignatureImage || ''}
+                onChange={(e) => setCertDesign({ ...certDesign, authorizedSignatureImage: e.target.value })}
+                style={{ width: '100%', padding: '8px', border: '1px solid #e0e0e0', borderRadius: '6px', boxSizing: 'border-box', marginBottom: '8px' }}
+              />
+              <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const f = e.target.files && e.target.files[0];
+                    if (!f) return;
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                      setCertDesign({ ...certDesign, authorizedSignatureImage: reader.result });
+                    };
+                    reader.readAsDataURL(f);
+                  }}
+                />
+                {certDesign.authorizedSignatureImage && (
+                  <img src={certDesign.authorizedSignatureImage} alt="signature preview" style={{ height: 48, borderRadius: 4, border: '1px solid #eee' }} />
+                )}
+              </div>
+            </div>
+
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.9rem', color: '#1a3a52', fontWeight: '500' }}>
+                Seal / Stamp Image
+              </label>
+              <input
+                type="text"
+                placeholder="Seal image URL (https://...) or upload"
+                value={certDesign.sealImage || ''}
+                onChange={(e) => setCertDesign({ ...certDesign, sealImage: e.target.value })}
+                style={{ width: '100%', padding: '8px', border: '1px solid #e0e0e0', borderRadius: '6px', boxSizing: 'border-box', marginBottom: '8px' }}
+              />
+              <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const f = e.target.files && e.target.files[0];
+                    if (!f) return;
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                      setCertDesign({ ...certDesign, sealImage: reader.result });
+                    };
+                    reader.readAsDataURL(f);
+                  }}
+                />
+                {certDesign.sealImage && (
+                  <img src={certDesign.sealImage} alt="seal preview" style={{ height: 48, borderRadius: 4, border: '1px solid #eee' }} />
+                )}
+              </div>
+            </div>
+
             {/* Preview */}
             <div style={{
               marginBottom: '20px',
@@ -592,9 +669,12 @@
               color: certDesign.accentColor,
               fontSize: '18px',
               fontWeight: 'bold',
-              borderColor: certDesign.accentColor
+              borderColor: certDesign.accentColor,
+              position: 'relative'
             }}>
-              Certificate Preview
+              <div style={{ position: 'relative', zIndex: 1 }}>Certificate Preview</div>
+              {/* lower-right watermark preview using logo.png */}
+              <img src="/logo.png" alt="watermark" style={{ position: 'absolute', right: 12, bottom: 8, width: 100, opacity: 0.06, pointerEvents: 'none', zIndex: 0 }} />
             </div>
 
             {/* Action Buttons */}

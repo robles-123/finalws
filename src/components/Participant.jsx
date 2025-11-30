@@ -304,16 +304,16 @@ function ParticipantDashboard({ onLogout }) {
           <!-- Signature Section -->
           <div style="display: flex; justify-content: center; gap: 100px; margin-top: 60px; padding-top: 40px; border-top: 2px solid ${certDesign.accentColor};">
             <div style="text-align: center;">
-              <div style="width: 180px; height: 80px; margin-bottom: 10px; display: flex; align-items: flex-end; justify-content: center; font-size: 48px; color: ${certDesign.accentColor}; font-weight: bold;">
-                /
+              <div style="width: 180px; height: 80px; margin-bottom: 10px; display: flex; align-items: flex-end; justify-content: center;">
+                ${certDesign.authorizedSignatureImage ? `<img src="${certDesign.authorizedSignatureImage}" alt="signature" style="max-height:80px; max-width:100%; object-fit:contain;" />` : '<div style="font-size:48px; color: ' + certDesign.accentColor + '; font-weight: bold;">/</div>'}
               </div>
-              <p style="font-size: 14px; margin: 5px 0 0 0; color: #333;">Authorized Signature</p>
+              <p style="font-size: 14px; margin: 5px 0 0 0; color: #333;">${certDesign.authorizedSignatureName ? certDesign.authorizedSignatureName : 'Authorized Signature'}</p>
             </div>
             <div style="text-align: center;">
-              <div style="width: 180px; height: 80px; margin-bottom: 10px; display: flex; align-items: flex-end; justify-content: center; font-size: 48px; color: ${certDesign.accentColor}; font-weight: bold;">
-                /
+              <div style="width: 180px; height: 80px; margin-bottom: 10px; display: flex; align-items: flex-end; justify-content: center;">
+                ${certDesign.sealImage ? `<img src="${certDesign.sealImage}" alt="seal" style="max-height:80px; max-width:100%; object-fit:contain;" />` : '<div style="font-size:48px; color: ' + certDesign.accentColor + '; font-weight: bold;">/</div>'}
               </div>
-              <p style="font-size: 14px; margin: 5px 0 0 0; color: #333;">Seal or Stamp</p>
+              <p style="font-size: 14px; margin: 5px 0 0 0; color: #333;">${certDesign.sealImage ? '' : 'Seal or Stamp'}</p>
             </div>
           </div>
 
@@ -321,7 +321,11 @@ function ParticipantDashboard({ onLogout }) {
           <p style="font-size: 12px; color: #999; margin-top: 40px;">
             Certificate No: ${Date.now()}
           </p>
-        </div>
+        
+          <!-- Lower-right watermark using logo.png -->
+          <img src="/logo.png" alt="watermark" style="position: absolute; bottom: 30px; right: 40px; width: 120px; opacity: 0.06; z-index: 0; pointer-events: none;" />
+
+          </div>
 
         <!-- Decorative Corner Elements -->
         <div style="position: absolute; top: 15px; left: 15px; width: 30px; height: 30px; border-top: 3px solid ${certDesign.accentColor}; border-left: 3px solid ${certDesign.accentColor};"></div>
@@ -758,7 +762,11 @@ function ParticipantDashboard({ onLogout }) {
         );
 
       case "evaluation":
-        return <Evaluation />;
+        return (
+          <div className="section-content">
+            <Evaluation />
+          </div>
+        );
 
       default:
         return null;

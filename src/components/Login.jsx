@@ -71,14 +71,15 @@ function Login({ onLogin }) {
 
         <div style={{ position: "relative", marginBottom: "1.5rem" }}>
           <input
-            type={showPassword ? "text" : "password"}
+            type="password"
             placeholder="Password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
+            autoComplete="current-password"
             style={{
               width: "100%",
-              padding: "0.95rem 2.8rem 0.95rem 0.95rem",
+              padding: "0.95rem",
               border: "2px solid #e0e0e0",
               borderRadius: "10px",
               fontSize: "1rem",
@@ -94,41 +95,6 @@ function Login({ onLogin }) {
               e.target.style.boxShadow = "none";
             }}
           />
-          <button
-            type="button"
-            onClick={() => setShowPassword(!showPassword)}
-            style={{
-              position: "absolute",
-              right: "0.75rem",
-              top: "25%",
-              transform: "translateY(-50%)",
-              border: "none",
-              background: "none",
-              cursor: "pointer",
-              padding: "0.3rem 0.2rem",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "#999",
-              transition: "color 0.3s",
-              width: "auto",
-              height: "auto"
-            }}
-            onMouseOver={(e) => e.currentTarget.style.color = "#c41e3a"}
-            onMouseOut={(e) => e.currentTarget.style.color = "#979797ff"}
-          >
-            {showPassword ? (
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                <circle cx="12" cy="12" r="3"></circle>
-              </svg>
-            ) : (
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-                <line x1="1" y1="1" x2="23" y2="23"></line>
-              </svg>
-            )}
-          </button>
         </div>
 
         <button 
