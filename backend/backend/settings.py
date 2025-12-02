@@ -40,12 +40,28 @@ DATABASES = {
 # Static files (for completeness)
 STATIC_URL = '/static/'
 
-# CORS: restrict in production
+# CORS configuration
 if DEBUG:
+    # Development: allow all origins
     CORS_ALLOW_ALL_ORIGINS = True
 else:
-    cors_origins = os.environ.get('CORS_ALLOWED_ORIGINS', 'https://finalws.vercel.app')
-    CORS_ALLOWED_ORIGINS = [origin.strip() for origin in cors_origins.split(',')]
+    # Production: restrict to Vercel frontend
+    CORS_ALLOW_ALL_ORIGINS = False
+    cors_origins_str = os.environ.get('CORS_ALLOWED_ORIGINS', 'https://finalws.vercel.app')
+    CORS_ALLOWED_ORIGINS = [origin.strip() for origin in cors_origins_str.split(',') if origin.strip()]
+
+# CORS headers to allow
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
 
 # Supabase service role envs
 SUPABASE_URL = os.environ.get('SUPABASE_URL')
