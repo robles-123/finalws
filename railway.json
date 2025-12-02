@@ -1,0 +1,8 @@
+{
+  "build": {
+    "builder": "dockerfile"
+  },
+  "deploy": {
+    "startCommand": "gunicorn backend.wsgi --bind 0.0.0.0:${PORT:-8000} --workers 2"
+  }
+}
