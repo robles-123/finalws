@@ -1,7 +1,7 @@
 import { supabase } from './supabaseClient';
 
-// Backend API base URL
-const API_BASE = 'http://127.0.0.1:8000/api';
+// Backend API base URL - use environment variable or fallback to localhost
+const API_BASE = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
 
 // Helper function for API calls
 async function apiCall(endpoint, method = 'GET', body = null) {
