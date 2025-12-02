@@ -1,10 +1,16 @@
 import { supabase } from './supabaseClient';
 
-// Backend API base URL - use environment variable or fallback to localhost
-const API_BASE = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
+// Backend API base URL - prefer environment variable. During development use localhost,
+// but in production do NOT fall back to localhost (that would fail when running on Vercel).
+const API_BASE = import.meta.env.VITE_API_URL ?? (import.meta.env.DEV ? 'http://127.0.0.1:8000/api' : '');
 
 // Helper function for API calls
 async function apiCall(endpoint, method = 'GET', body = null) {
+  if (!API_BASE) {
+    console.error('API base URL is not configured. Set `VITE_API_URL` in your environment (Vercel project settings).');
+    return { data: null, error: 'API_BASE_NOT_CONFIGURED' };
+  }
+
   try {
     const options = {
       method,
