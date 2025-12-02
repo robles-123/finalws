@@ -1,0 +1,8 @@
+Django>=4.2,<5.0
+djangorestframework>=3.14
+supabase>=0.6.0
+django-cors-headers>=3.15.0
+python-dotenv>=1.0.0
+gunicorn>=21.0
+requests>=2.31
+
