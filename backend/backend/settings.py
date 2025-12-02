@@ -44,8 +44,8 @@ STATIC_URL = '/static/'
 if DEBUG:
     CORS_ALLOW_ALL_ORIGINS = True
 else:
-    CORS_ALLOWED_ORIGINS = os.environ.get('CORS_ALLOWED_ORIGINS', 'localhost:3000').split(',')
-    CORS_ALLOWED_ORIGINS = [origin.strip() for origin in CORS_ALLOWED_ORIGINS]
+    cors_origins = os.environ.get('CORS_ALLOWED_ORIGINS', 'https://finalws.vercel.app')
+    CORS_ALLOWED_ORIGINS = [origin.strip() for origin in cors_origins.split(',')]
 
 # Supabase service role envs
 SUPABASE_URL = os.environ.get('SUPABASE_URL')
