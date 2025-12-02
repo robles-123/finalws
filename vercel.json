@@ -2,9 +2,6 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "env": {
-    "VITE_API_URL": {
-      "description": "Backend API URL - set to your deployed Django backend URL"
-    }
-  },
-  "envPrefix": "VITE_"
+    "VITE_API_URL": "https://your-backend.example.com/api"
+  }
 }
