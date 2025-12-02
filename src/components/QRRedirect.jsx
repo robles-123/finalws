@@ -327,7 +327,7 @@ export default function QRRedirect() {
         </div>
       )}
 
-      {/* Main Card */}
+      <div style={{
         background: '#fff',
         borderRadius: '16px',
         padding: '40px',
