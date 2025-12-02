@@ -475,24 +475,24 @@ export default function QRRedirect() {
             </button>
           </>
         )}
-      </div>
 
-      <style>{`
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-        @keyframes slideIn {
-          from {
-            transform: translateY(-50px);
-            opacity: 0;
+        <style>{`
+          @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
           }
-          to {
-            transform: translateY(0);
-            opacity: 1;
+          @keyframes slideIn {
+            from {
+              transform: translateY(-50px);
+              opacity: 0;
+            }
+            to {
+              transform: translateY(0);
+              opacity: 1;
+            }
           }
-        }
-      `}</style>
+        `}</style>
+      </div>
     </div>
   );
 }
